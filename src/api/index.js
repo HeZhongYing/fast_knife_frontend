@@ -1,13 +1,65 @@
 import axios from 'axios'
+import Vue from 'vue'
+
+// 创建一个事件总线，用于传递耗时数据
+export const apiMonitorBus = new Vue()
 
 const request = axios.create({
   baseURL: '/api',
   timeout: 10000
 })
 
-request.interceptors.response.use(
-  response => response.data,
+// 请求拦截器：记录开始时间
+request.interceptors.request.use(
+  config => {
+    config._startTime = Date.now()
+    return config
+  },
   error => {
+    return Promise.reject(error)
+  }
+)
+
+// 响应拦截器：计算耗时
+request.interceptors.response.use(
+  response => {
+    const endTime = Date.now()
+    const startTime = response.config._startTime || endTime
+    const duration = endTime - startTime
+
+    // 提取接口信息
+    const url = response.config.url || ''
+    const method = response.config.method || 'GET'
+    const fullUrl = url.startsWith('/api') ? url : `/api${url}`
+
+    // 发送耗时数据到监控组件
+    apiMonitorBus.$emit('api-call', {
+      url: fullUrl,
+      method: method.toUpperCase(),
+      duration: duration,
+      timestamp: new Date().toLocaleTimeString(),
+      status: 'success'
+    })
+
+    return response.data
+  },
+  error => {
+    const endTime = Date.now()
+    const startTime = error.config?._startTime || endTime
+    const duration = endTime - startTime
+
+    const url = error.config?.url || ''
+    const method = error.config?.method || 'GET'
+    const fullUrl = url.startsWith('/api') ? url : `/api${url}`
+
+    apiMonitorBus.$emit('api-call', {
+      url: fullUrl,
+      method: method.toUpperCase(),
+      duration: duration,
+      timestamp: new Date().toLocaleTimeString(),
+      status: 'error'
+    })
+
     console.error('请求错误:', error)
     return Promise.reject(error)
   }
@@ -23,8 +75,8 @@ export default {
   },
 
   // 用户接口
-  getUsers() {
-    return request.get('/users')
+  getUsers(params) {
+    return request.get('/users', { params })
   },
   getUserById(id) {
     return request.get(`/users/${id}`)
@@ -52,8 +104,8 @@ export default {
   },
 
   // 角色接口
-  getRoles() {
-    return request.get('/roles')
+  getRoles(params) {
+    return request.get('/roles', { params })
   },
   getRoleById(id) {
     return request.get(`/roles/${id}`)
@@ -81,8 +133,8 @@ export default {
   },
 
   // 权限接口
-  getPermissions() {
-    return request.get('/permissions')
+  getPermissions(params) {
+    return request.get('/permissions', { params })
   },
   getPermissionById(id) {
     return request.get(`/permissions/${id}`)

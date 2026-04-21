@@ -42,6 +42,17 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-pagination
+        class="pagination"
+        background
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="pageNum"
+        :page-sizes="[20, 50, 100]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total">
+      </el-pagination>
     </el-card>
 
     <!-- 新增/编辑用户对话框 -->
@@ -112,6 +123,9 @@ export default {
       dialogTitle: '',
       currentUser: null,
       selectedRoleIds: [],
+      pageNum: 1,
+      pageSize: 20,
+      total: 0,
       form: {
         id: null,
         username: '',
@@ -145,19 +159,31 @@ export default {
     },
     async loadUsers() {
       try {
-        this.users = await api.getUsers()
+        const result = await api.getUsers({ pageNum: this.pageNum, pageSize: this.pageSize })
+        this.users = result.list || []
+        this.total = result.total || 0
       } catch (e) {
         this.$message.error('加载用户数据失败')
       }
     },
     async loadRoles() {
       try {
-        this.allRoles = await api.getRoles()
+        const result = await api.getRoles()
+        this.allRoles = result.list || result || []
       } catch (e) {
         console.error('加载角色数据失败', e)
       }
     },
+    handleSizeChange(val) {
+      this.pageSize = val
+      this.loadUsers()
+    },
+    handleCurrentChange(val) {
+      this.pageNum = val
+      this.loadUsers()
+    },
     handleRefresh() {
+      this.pageNum = 1
       this.loadData()
     },
     handleAdd() {
@@ -224,6 +250,7 @@ export default {
         try {
           const result = await api.clearUsers()
           this.$message.success(result || '清空成功')
+          this.pageNum = 1
           this.loadUsers()
         } catch (e) {
           this.$message.error('清空失败')
@@ -259,5 +286,10 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

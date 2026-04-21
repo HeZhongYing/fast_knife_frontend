@@ -48,6 +48,17 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-pagination
+        class="pagination"
+        background
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="pageNum"
+        :page-sizes="[20, 50, 100]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total">
+      </el-pagination>
     </el-card>
 
     <!-- 新增/编辑角色对话框 -->
@@ -127,6 +138,9 @@ export default {
       dialogTitle: '',
       currentRole: null,
       selectedPermissionIds: [],
+      pageNum: 1,
+      pageSize: 20,
+      total: 0,
       form: {
         id: null,
         name: '',
@@ -157,26 +171,39 @@ export default {
     },
     async loadRoles() {
       try {
-        this.roles = await api.getRoles()
+        const result = await api.getRoles({ pageNum: this.pageNum, pageSize: this.pageSize })
+        this.roles = result.list || []
+        this.total = result.total || 0
       } catch (e) {
         this.$message.error('加载角色数据失败')
       }
     },
     async loadUsers() {
       try {
-        this.allUsers = await api.getUsers()
+        const result = await api.getUsers()
+        this.allUsers = result.list || result || []
       } catch (e) {
         console.error('加载用户数据失败', e)
       }
     },
     async loadPermissions() {
       try {
-        this.allPermissions = await api.getPermissions()
+        const result = await api.getPermissions()
+        this.allPermissions = result.list || result || []
       } catch (e) {
         console.error('加载权限数据失败', e)
       }
     },
+    handleSizeChange(val) {
+      this.pageSize = val
+      this.loadRoles()
+    },
+    handleCurrentChange(val) {
+      this.pageNum = val
+      this.loadRoles()
+    },
     handleRefresh() {
+      this.pageNum = 1
       this.loadData()
     },
     handleAdd() {
@@ -240,6 +267,7 @@ export default {
         try {
           const result = await api.clearRoles()
           this.$message.success(result || '清空成功')
+          this.pageNum = 1
           this.loadRoles()
         } catch (e) {
           this.$message.error('清空失败')
@@ -285,5 +313,10 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

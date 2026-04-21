@@ -35,12 +35,18 @@
         </el-main>
       </el-container>
     </el-container>
+    <ApiMonitor />
   </div>
 </template>
 
 <script>
+import ApiMonitor from './components/ApiMonitor.vue'
+
 export default {
-  name: 'App'
+  name: 'App',
+  components: {
+    ApiMonitor
+  }
 }
 </script>
 

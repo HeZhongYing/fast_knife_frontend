@@ -39,6 +39,17 @@
           </template>
         </el-table-column>
       </el-table>
+      <el-pagination
+        class="pagination"
+        background
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="pageNum"
+        :page-sizes="[20, 50, 100]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total">
+      </el-pagination>
     </el-card>
 
     <!-- 新增/编辑权限对话框 -->
@@ -95,6 +106,9 @@ export default {
       isEdit: false,
       dialogTitle: '',
       currentPermission: null,
+      pageNum: 1,
+      pageSize: 20,
+      total: 0,
       form: {
         id: null,
         name: '',
@@ -122,12 +136,23 @@ export default {
     },
     async loadPermissions() {
       try {
-        this.permissions = await api.getPermissions()
+        const result = await api.getPermissions({ pageNum: this.pageNum, pageSize: this.pageSize })
+        this.permissions = result.list || []
+        this.total = result.total || 0
       } catch (e) {
         this.$message.error('加载权限数据失败')
       }
     },
+    handleSizeChange(val) {
+      this.pageSize = val
+      this.loadPermissions()
+    },
+    handleCurrentChange(val) {
+      this.pageNum = val
+      this.loadPermissions()
+    },
     handleRefresh() {
+      this.pageNum = 1
       this.loadData()
     },
     handleAdd() {
@@ -191,6 +216,7 @@ export default {
         try {
           const result = await api.clearPermissions()
           this.$message.success(result || '清空成功')
+          this.pageNum = 1
           this.loadPermissions()
         } catch (e) {
           this.$message.error('清空失败')
@@ -216,5 +242,10 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
