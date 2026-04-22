@@ -3,6 +3,17 @@
     <el-container>
       <el-header>
         <h1>Fast Knife - RBAC 权限管理系统</h1>
+        <div class="data-source-switcher">
+          <span class="label">当前数据源:</span>
+          <el-radio-group v-model="currentDataSource" size="small" @change="handleDataSourceChange">
+            <el-radio-button label="JVM">
+              <i class="el-icon-magic-stick"></i> JVM 内存
+            </el-radio-button>
+            <el-radio-button label="MYSQL">
+              <i class="el-icon-s-data"></i> MySQL
+            </el-radio-button>
+          </el-radio-group>
+        </div>
       </el-header>
       <el-container>
         <el-aside width="200px">
@@ -41,11 +52,39 @@
 
 <script>
 import ApiMonitor from './components/ApiMonitor.vue'
+import api from './api/index'
 
 export default {
   name: 'App',
   components: {
     ApiMonitor
+  },
+  data() {
+    return {
+      currentDataSource: 'JVM'
+    }
+  },
+  created() {
+    this.fetchCurrentDataSource()
+  },
+  methods: {
+    async fetchCurrentDataSource() {
+      try {
+        const data = await api.getDataSource()
+        this.currentDataSource = data.current
+      } catch (error) {
+        console.error('获取当前数据源失败:', error)
+      }
+    },
+    async handleDataSourceChange(newType) {
+      try {
+        await api.switchDataSource(newType)
+        this.$message.success(`数据源已切换为 ${newType}`)
+      } catch (error) {
+        console.error('切换数据源失败:', error)
+        this.$message.error('切换数据源失败')
+      }
+    }
   }
 }
 </script>
@@ -63,10 +102,19 @@ export default {
   line-height: 60px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 .el-header h1 {
   margin: 0;
   font-size: 24px;
+}
+.data-source-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.data-source-switcher .label {
+  font-size: 14px;
 }
 .el-aside {
   background-color: #545c64;

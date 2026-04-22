@@ -162,5 +162,13 @@ export default {
   },
   createSamplePermissions() {
     return request.post('/permissions/sample')
+  },
+
+  // 数据源管理接口
+  getDataSource() {
+    return request.get('/datasource')
+  },
+  switchDataSource(type) {
+    return request.put(`/datasource/${type}`)
   }
 }
