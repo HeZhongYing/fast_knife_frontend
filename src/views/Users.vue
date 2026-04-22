@@ -15,6 +15,29 @@
           </el-button>
         </div>
       </div>
+      <!-- 搜索表单 -->
+      <el-form :inline="true" :model="searchForm" class="search-form">
+        <el-form-item label="用户名">
+          <el-input v-model="searchForm.username" placeholder="请输入用户名" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="昵称">
+          <el-input v-model="searchForm.nickname" placeholder="请输入昵称" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="searchForm.email" placeholder="请输入邮箱" clearable></el-input>
+        </el-form-item>
+        <el-form-item label="手机号">
+          <el-input v-model="searchForm.phone" placeholder="请输入手机号" clearable></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">
+            <i class="el-icon-search"></i> 搜索
+          </el-button>
+          <el-button @click="handleReset">
+            <i class="el-icon-refresh-left"></i> 重置
+          </el-button>
+        </el-form-item>
+      </el-form>
       <el-table :data="users" border stripe v-loading="loading">
         <el-table-column prop="id" label="ID" width="80"></el-table-column>
         <el-table-column prop="username" label="用户名" width="120"></el-table-column>
@@ -126,6 +149,12 @@ export default {
       pageNum: 1,
       pageSize: 20,
       total: 0,
+      searchForm: {
+        username: '',
+        nickname: '',
+        email: '',
+        phone: ''
+      },
       form: {
         id: null,
         username: '',
@@ -159,12 +188,33 @@ export default {
     },
     async loadUsers() {
       try {
-        const result = await api.getUsers({ pageNum: this.pageNum, pageSize: this.pageSize })
+        const result = await api.getUsers({
+          pageNum: this.pageNum,
+          pageSize: this.pageSize,
+          username: this.searchForm.username,
+          nickname: this.searchForm.nickname,
+          email: this.searchForm.email,
+          phone: this.searchForm.phone
+        })
         this.users = result.list || []
         this.total = result.total || 0
       } catch (e) {
         this.$message.error('加载用户数据失败')
       }
+    },
+    handleSearch() {
+      this.pageNum = 1
+      this.loadUsers()
+    },
+    handleReset() {
+      this.searchForm = {
+        username: '',
+        nickname: '',
+        email: '',
+        phone: ''
+      }
+      this.pageNum = 1
+      this.loadUsers()
     },
     async loadRoles() {
       try {
@@ -286,6 +336,12 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.search-form {
+  padding: 15px 0;
+  background-color: #f5f7fa;
+  margin-bottom: 20px;
+  border-radius: 4px;
 }
 .pagination {
   margin-top: 20px;
