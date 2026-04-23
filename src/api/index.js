@@ -6,7 +6,7 @@ export const apiMonitorBus = new Vue()
 
 const request = axios.create({
   baseURL: '/api',
-  timeout: 10000
+  timeout: 60000
 })
 
 // 请求拦截器：记录开始时间
@@ -20,6 +20,20 @@ request.interceptors.request.use(
   }
 )
 
+// 格式化时间为 hh:mm:ss
+function formatTime(date) {
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${hours}:${minutes}:${seconds}`
+}
+
+// 根据URL判断实现类型
+function getImplType(url) {
+  // 简单判断规则：根据接口路径或其他特征区分，这里默认JVM，可扩展
+  return 'JVM'
+}
+
 // 响应拦截器：计算耗时
 request.interceptors.response.use(
   response => {
@@ -32,13 +46,17 @@ request.interceptors.response.use(
     const method = response.config.method || 'GET'
     const fullUrl = url.startsWith('/api') ? url : `/api${url}`
 
+    // 从响应头获取实现类型（如果后端返回了 X-Impl-Type）
+    const implType = response.headers['x-impl-type'] || 'JVM'
+
     // 发送耗时数据到监控组件
     apiMonitorBus.$emit('api-call', {
       url: fullUrl,
       method: method.toUpperCase(),
       duration: duration,
-      timestamp: new Date().toLocaleTimeString(),
-      status: 'success'
+      timestamp: formatTime(new Date()),
+      status: 'success',
+      implType: implType
     })
 
     return response.data
@@ -56,8 +74,9 @@ request.interceptors.response.use(
       url: fullUrl,
       method: method.toUpperCase(),
       duration: duration,
-      timestamp: new Date().toLocaleTimeString(),
-      status: 'error'
+      timestamp: formatTime(new Date()),
+      status: 'error',
+      implType: 'JVM'
     })
 
     console.error('请求错误:', error)

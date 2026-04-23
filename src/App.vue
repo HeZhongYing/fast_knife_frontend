@@ -5,14 +5,26 @@
         <h1>Fast Knife - RBAC 权限管理系统</h1>
         <div class="data-source-switcher">
           <span class="label">当前数据源:</span>
-          <el-radio-group v-model="currentDataSource" size="small" @change="handleDataSourceChange">
-            <el-radio-button label="JVM">
-              <i class="el-icon-magic-stick"></i> JVM 内存
-            </el-radio-button>
-            <el-radio-button label="MYSQL">
-              <i class="el-icon-s-data"></i> MySQL
-            </el-radio-button>
-          </el-radio-group>
+          <el-tag :type="currentDataSource === 'JVM' ? 'warning' : 'success'" size="medium" class="data-source-tag">
+            <i :class="currentDataSource === 'JVM' ? 'el-icon-magic-stick' : 'el-icon-s-data'"></i>
+            {{ currentDataSource === 'JVM' ? 'JVM 内存' : 'MySQL' }}
+          </el-tag>
+          <el-button-group>
+            <el-button
+              :type="currentDataSource === 'JVM' ? 'warning' : 'default'"
+              size="small"
+              @click="switchDataSource('JVM')"
+              :plain="currentDataSource !== 'JVM'">
+              <i class="el-icon-magic-stick"></i> 切换到 JVM
+            </el-button>
+            <el-button
+              :type="currentDataSource === 'MYSQL' ? 'success' : 'default'"
+              size="small"
+              @click="switchDataSource('MYSQL')"
+              :plain="currentDataSource !== 'MYSQL'">
+              <i class="el-icon-s-data"></i> 切换到 MySQL
+            </el-button>
+          </el-button-group>
         </div>
       </el-header>
       <el-container>
@@ -46,7 +58,7 @@
         </el-main>
       </el-container>
     </el-container>
-    <ApiMonitor />
+    <ApiMonitor :current-data-source="currentDataSource" />
   </div>
 </template>
 
@@ -76,10 +88,12 @@ export default {
         console.error('获取当前数据源失败:', error)
       }
     },
-    async handleDataSourceChange(newType) {
+    async switchDataSource(newType) {
+      if (this.currentDataSource === newType) return
       try {
         await api.switchDataSource(newType)
-        this.$message.success(`数据源已切换为 ${newType}`)
+        this.currentDataSource = newType
+        this.$message.success(`数据源已切换为 ${newType === 'JVM' ? 'JVM 内存' : 'MySQL'}`)
       } catch (error) {
         console.error('切换数据源失败:', error)
         this.$message.error('切换数据源失败')
@@ -111,10 +125,15 @@ export default {
 .data-source-switcher {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 .data-source-switcher .label {
   font-size: 14px;
+}
+.data-source-tag {
+  font-size: 14px;
+  font-weight: bold;
+  padding: 6px 12px;
 }
 .el-aside {
   background-color: #545c64;
