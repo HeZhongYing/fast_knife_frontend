@@ -2,6 +2,8 @@
 
 Fast Knife 后端项目的前端管理界面，基于 Vue2 + ElementUI 实现。
 
+> 后端仓库：[fast_knife](https://github.com/HeZhongYing/fast_knife) — Spring Boot 双数据源（JVM / MySQL）性能对比 Demo
+
 ## 技术栈
 
 - Vue 2.7.14
