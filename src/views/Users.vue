@@ -149,6 +149,9 @@ export default {
       pageNum: 1,
       pageSize: 20,
       total: 0,
+      lastRecordId: null,     // 当前页最后一条记录的 ID，用于下一页 cursor 翻页
+      prevPageNum: 1,         // 上一页页码，用于判断是否是"下一页"
+      nextPageLastId: null,   // 传给后端的 lastId
       searchForm: {
         username: '',
         nickname: '',
@@ -188,22 +191,34 @@ export default {
     },
     async loadUsers() {
       try {
-        const result = await api.getUsers({
+        const params = {
           pageNum: this.pageNum,
           pageSize: this.pageSize,
           username: this.searchForm.username,
           nickname: this.searchForm.nickname,
           email: this.searchForm.email,
           phone: this.searchForm.phone
-        })
+        }
+        // 只有有值时才传 lastId，避免空字符串导致 Spring 400 错误
+        if (this.nextPageLastId) {
+          params.lastId = this.nextPageLastId
+        }
+        const result = await api.getUsers(params)
         this.users = result.list || []
         this.total = result.total || 0
+        // 记录当前页最后一条记录的 ID，供下一页使用
+        if (this.users.length > 0) {
+          this.lastRecordId = this.users[this.users.length - 1].id
+        } else {
+          this.lastRecordId = null
+        }
       } catch (e) {
         this.$message.error('加载用户数据失败')
       }
     },
     handleSearch() {
       this.pageNum = 1
+      this.nextPageLastId = null
       this.loadUsers()
     },
     handleReset() {
@@ -214,6 +229,7 @@ export default {
         phone: ''
       }
       this.pageNum = 1
+      this.nextPageLastId = null
       this.loadUsers()
     },
     async loadRoles() {
@@ -226,14 +242,23 @@ export default {
     },
     handleSizeChange(val) {
       this.pageSize = val
+      this.nextPageLastId = null
       this.loadUsers()
     },
     handleCurrentChange(val) {
+      // 只有连续点击"下一页"时才传 lastId，其他情况（上一页、跳页）不传
+      if (val === this.prevPageNum + 1 && this.lastRecordId) {
+        this.nextPageLastId = this.lastRecordId
+      } else {
+        this.nextPageLastId = null
+      }
       this.pageNum = val
       this.loadUsers()
+      this.prevPageNum = val
     },
     handleRefresh() {
       this.pageNum = 1
+      this.nextPageLastId = null
       this.loadData()
     },
     handleAdd() {
